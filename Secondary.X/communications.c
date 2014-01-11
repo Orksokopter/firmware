@@ -1,31 +1,21 @@
 #include "headers.h"
 
-#pragma udata ser_buffers
 // Hier kommen die Rohdaten vom seriellen Port rein
 unsigned char ser_rec_buffer_data[128]; buffer ser_rec_buffer = { ser_rec_buffer_data, sizeof(ser_rec_buffer_data) / sizeof(char), 0, 0, 0};
 unsigned char ser_send_buffer_data[128]; buffer ser_send_buffer = { ser_send_buffer_data, sizeof(ser_send_buffer_data) / sizeof(char), 0, 0 , 0};
-#pragma udata msg_buffers
+
 // Über der Framing- und Escaping-Schicht kommt hier dann jeweils eine Nachricht rein
 unsigned char in_msg_buffer_data[128]; buffer in_msg_buffer = { in_msg_buffer_data, sizeof(in_msg_buffer_data) / sizeof(char), 0, 0, 0};
 unsigned char out_msg_buffer_data[128]; buffer out_msg_buffer = { out_msg_buffer_data, sizeof(out_msg_buffer_data) / sizeof(char), 0, 0, 0};
-#pragma udata spi_buffers
+
 // Hier liegt eine Nachricht drin, durch Implementierung eines einfachen Flow-Control brauchen wir da keinen Rohdatenpuffer
 unsigned char spi_in_msg_buffer_data[128]; buffer spi_in_msg_buffer = { spi_in_msg_buffer_data, sizeof(spi_in_msg_buffer_data) / sizeof(char), 0, 0, 0};
 unsigned char spi_out_msg_buffer_data[128]; buffer spi_out_msg_buffer = { spi_out_msg_buffer_data, sizeof(spi_out_msg_buffer_data) / sizeof(char), 0, 0, 0};
-#pragma udata proxy_message_buffer
+
 // Hier liegt der Inhalt einer Proxy-Message drin, denn der kann auch schonmal größer werden als die normalerweise zur Verfügung stehenden 14 Bytes
 unsigned char proxy_message_contents[255];
-#pragma udata
 
-#pragma idata spi_message_buffer
-struct {
-	int write_cursor;
-	int read_cursor;
-	bool ack_pending;
-	uint16_t waiting_for_ack_timer;
-	message messages[10];
-} out_messages = {0, 0, false, 0};
-#pragma idata
+struct blah out_messages = {0, 0, false, 0};
 
 // Da in dem Puffer immer nur eine Nachricht liegen kann, braucht auch nur eine zerlegte Nachricht vorgehalten zu werden.
 // Hier kommt sie:
@@ -336,7 +326,7 @@ void do_uart_sending(void)
 // === Mid-Level-Funktionen (Nachrichten <-> Serielle Puffer) ==========================================================
 
 // Kopiert ROM-Daten in den ser_send_buffer
-void send_literal_uart_data(const rom char* data, size_t length)
+void send_literal_uart_data(const char* data, size_t length)
 {
 	// Hundertprozentig identisch zu send_uart_data bis auf die Signatur
 

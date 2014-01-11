@@ -1,13 +1,10 @@
 #include "headers.h"
 
-#pragma code isr=0x08
-#pragma interrupt isr
-
 int hurz = 0;
 
-void isr(void)
+void interrupt isr(void)
 {
-	char dummy;
+	volatile char dummy;
 
 	if (PIR1bits.RCIF)
 	{
@@ -46,5 +43,3 @@ void isr(void)
 		INTCONbits.TMR0IF = 0;
 	}
 }
-
-#pragma code

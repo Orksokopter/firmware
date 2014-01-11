@@ -21,7 +21,7 @@ enum message_type {
 };
 
 typedef struct {
-	int number;
+	uint24_t number;
 	enum message_type type;
 	int length;
 	union {
@@ -35,13 +35,13 @@ typedef struct {
 			uint16_t sequence_number;
 		} pong;
                 struct {
-			int number;
-                        int previous_number;
+			uint24_t number;
+                        uint24_t previous_number;
 		} clear_to_send;
 	} contents;
 } message;
 
-extern struct {
+extern struct blah {
 	int write_cursor;
 	int read_cursor;
 	bool ack_pending;
@@ -56,14 +56,14 @@ extern buffer spi_send_buffer;
 extern buffer spi_out_msg_buffer;
 extern void init_communications(void);
 extern void do_uart_sending(void);
-extern void send_literal_uart_data(const rom char* data, size_t length);
+extern void send_literal_uart_data(const char* data, size_t length);
 extern void send_uart_data(const char* data, size_t length);
 extern bool uart_is_sending(void);
 extern void on_uart_data_received(char data);
 extern void do_message_processing(void);
 extern void process_message(void);
 extern void clear_out_message_buffer(void);
-extern void add_literal_out_message_data(const rom char* data, size_t length);
+extern void add_literal_out_message_data(const char* data, size_t length);
 extern void add_out_message_data(const char* data, size_t length);
 extern bool check_checksum(void);
 extern void build_message_to_groundstation(message *out_msg);

@@ -49,13 +49,6 @@
 	#define UAVXBOARD
 #endif // EXPERIMENTAL
 
-#ifdef I2C_HW
-	#include "i2c.h"
-#else
-	#define MASTER 		0
-	#define SLEW_ON 	0
-#endif // I2C_HW
-
 //________________________________________________________________________________________________
 
 #define USE_PPM_FAILSAFE
@@ -325,12 +318,12 @@ typedef union {
 		uint16 w1;
 	};
 	struct {
-		int16 pad;
+		int16 pad16;
 		int16 iw1;
 	};
 
 	struct {
-		uint8 pad;
+		uint8 pad8;
 		int24 i3_1;
 	};
 } i32u;
@@ -778,7 +771,7 @@ typedef struct {
 
 extern NMEAStruct NMEA;
 
-extern const rom uint8 NMEATag[];
+extern const uint8 NMEATag[];
 
 extern int32 GPSMissionTime, GPSStartTime;
 extern int32 GPSLatitude, GPSLongitude;
@@ -1000,11 +993,11 @@ extern void ShowRxSetup(void);
 extern void ShowSetup(boolean);
 extern void ProcessCommand(void);
 
-extern const rom uint8 SerHello[];
-extern const rom uint8 SerSetup[];
-extern const rom uint8 SerPrompt[];
+extern const uint8 SerHello[];
+extern const uint8 SerSetup[];
+extern const uint8 SerPrompt[];
 
-extern const rom uint8 RxChMnem[];
+extern const uint8 RxChMnem[];
 
 //______________________________________________________________________________________________
 
@@ -1059,7 +1052,7 @@ extern void InitParameters(void);
 enum TxRxTypes {
 	FutabaCh3, FutabaCh2, FutabaDM8, JRPPM, JRDM9, JRDXS12,
 	DX7AR7000, DX7AR6200, FutabaCh3_6_7, DX7AR6000, GraupnerMX16s, DX6iAR6200, FutabaCh3_R617FS, DX7aAR7000, CustomTxRx };
-enum RCControls {ThrottleC, RollC, PitchC, YawC, RTHC, CamPitchC, NavGainC};
+//enum RCControls {ThrottleC, RollC, PitchC, YawC, RTHC, CamPitchC, NavGainC};
 enum ESCTypes { ESCPPM, ESCHolger, ESCX3D, ESCYGEI2C };
 enum GyroTypes { Gyro300D5V, Gyro150D5V, IDG300, Gyro300D3V, CustomGyro};
 enum AFs { QuadAF, TriAF, HexAF, HeliAF, ElevAF, AilAF };
@@ -1158,10 +1151,10 @@ enum Params { // MAX 64
 
 // bit 7 unusable in UAVPSet
 
-extern const rom int8 ComParms[];
-extern const rom int8 DefaultParams[];
+extern const int8 ComParms[];
+extern const int8 DefaultParams[];
 
-extern const rom uint8 ESCLimits [];
+extern const uint8 ESCLimits [];
 
 
 extern int16 OSin[], OCos[];
@@ -1193,8 +1186,8 @@ extern void UpdateControls(void);
 extern void CaptureTrims(void);
 extern void CheckThrottleMoved(void);
 
-extern const rom boolean PPMPosPolarity[];
-extern const rom uint8 Map[CustomTxRx+1][CONTROLS];
+extern const boolean PPMPosPolarity[];
+extern const uint8 Map[CustomTxRx+1][CONTROLS];
 extern int8 RMap[];
 
 #define PPMQMASK 3
@@ -1205,7 +1198,7 @@ extern int16x8x4Q PPMQ;
 
 // serial.c
 
-extern void TxString(const rom uint8*);
+extern void TxString(const uint8*);
 extern void TxChar(uint8);
 extern void TxValU(uint8);
 extern void TxValS(int8);
