@@ -38,7 +38,7 @@ void init_communications()
 {
 	// --- UART ---
 
-	// Laut Tabelle: Fosc = 40 MHz, !BRGH, !BRG16, 57k6 -> SPBRG = 172
+	// Laut Tabelle: Fosc = 40 MHz, BRGH, BRG16, 57k6 -> SPBRG = 172
 	SPBRGH = 0;
 	SPBRG = 172;
 
