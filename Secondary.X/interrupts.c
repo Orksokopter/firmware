@@ -16,18 +16,6 @@ void interrupt isr(void)
 		{
 			ser_rec_buffer.data[ser_rec_buffer.write_cursor] = RCREG;
 
-			if (ser_rec_buffer.data[ser_rec_buffer.write_cursor] == 0x01)
-				hurz = 1;
-			else if (hurz == 1 && ser_rec_buffer.data[ser_rec_buffer.write_cursor] == 0x00)
-				hurz = 2;
-			else if (hurz == 2 && ser_rec_buffer.data[ser_rec_buffer.write_cursor] == 0x00)
-				hurz = 3;
-			else if (hurz == 3 && ser_rec_buffer.data[ser_rec_buffer.write_cursor] == 0x13)
-			{
-				LATAbits.LATA2 = 1;
-				LATAbits.LATA2 = 0;
-			}
-
 			ser_rec_buffer.write_cursor++;
 			if (ser_rec_buffer.write_cursor == ser_rec_buffer.size)
 				ser_rec_buffer.write_cursor = 0;

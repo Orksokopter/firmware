@@ -17,7 +17,10 @@ enum message_type {
 	MSG_DO_ACCEL_CALIBRATION = 0x00000c,
 	MSG_ACCEL_CALIBRATION_DONE = 0x00000d,
 	MSG_DO_GYRO_CALIBRATION = 0x00000e,
-	MSG_GYRO_CALIBRATION_DONE = 0x00000f
+	MSG_GYRO_CALIBRATION_DONE = 0x00000f,
+	MSG_DECIMAL_DEBUG_DUMP = 0x000010,
+	MSG_REQUEST_CONFIRMATION = 0x000011,
+	MSG_CONFIRMATION = 0x000012
 };
 
 typedef struct {
@@ -34,10 +37,12 @@ typedef struct {
 		struct {
 			uint16_t sequence_number;
 		} pong;
-                struct {
-			uint24_t number;
-                        uint24_t previous_number;
-		} clear_to_send;
+		struct {
+			uint24_t message_number;
+		} request_confirmation;
+		struct {
+			uint24_t confirmed_message_number;
+		} confirmation;
 	} contents;
 } message;
 
@@ -66,6 +71,7 @@ extern void clear_out_message_buffer(void);
 extern void add_literal_out_message_data(const char* data, size_t length);
 extern void add_out_message_data(const char* data, size_t length);
 extern bool check_checksum(void);
+extern void confirm_message_to_groundstation(uint24_t message_number);
 extern void build_message_to_groundstation(message *out_msg);
 extern void do_spi_comm(void);
 extern void on_timer0_overflow(void);

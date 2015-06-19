@@ -25,8 +25,6 @@ bool spi_locked = true;
 bool spi_message_locked = true;
 bool spi_receiving = false;
 bool last_irq_state = false;
-int pending_cts_number = 0;
-int previous_cts_number = 0;
 bool clear_to_send_to_primary = true;
 
 void process_message_from_primary(void);
@@ -296,8 +294,6 @@ void process_message_from_primary(void)
 // Nimmt den Datenstrom aus dem ser_send_buffer und schickt ihn auf die serielle Funkstrecke raus
 void do_uart_sending(void)
 {
-	message cts_message;
-
 	while (!PIR1bits.TXIF); // Blockt, kommt aber hoffentlich nie vor
 
 	// Wenn wir mal schneller als mit 2k4 senden, sollten wir hier auf CTS prüfen
@@ -306,20 +302,7 @@ void do_uart_sending(void)
 	// kann der µC derweil was anderes machen
 	if (!ringbuffer_empty(&ser_send_buffer))
 		TXREG = ringbuffer_shift(&ser_send_buffer);
-	else if (pending_cts_number)
-	{
-		// Dadurch, das wir das hier machen, verhindern wir, dass der Ausgangspuffer volläuft mit CTS-Nachrichten
-		cts_message.type = MSG_CLEAR_TO_SEND;
-		cts_message.length = 6;
-		cts_message.contents.clear_to_send.number = pending_cts_number;
-		cts_message.contents.clear_to_send.previous_number = previous_cts_number;
-
-		build_message_to_groundstation(&cts_message);
-
-		previous_cts_number = pending_cts_number;
-		pending_cts_number = 0;
-	}
-
+	
 	Nop(); // Damit das Interrupt-Flag ganz sicher false werden kann
 }
 
@@ -365,6 +348,7 @@ void do_message_processing(void)
 
 	// Wir verarbeiten erst die nächste Nachricht, wenn alle anderen Puffer leer sind, denn es könnten ja Nachrichten
 	// dabei entstehen und der serielle Datenstrom wartet bereitwillig
+	// TODO: Muss hier nicht auch irgendwie der Eingangspuffer noch sein?
 	if (!ringbuffer_empty(&ser_send_buffer) || !(out_messages.read_cursor == out_messages.write_cursor && !out_messages.ack_pending) || !clear_to_send_to_primary)
 		return;
 
@@ -459,10 +443,11 @@ void process_message(void)
 	if (in_msg.type == MSG_NOP)
 		in_msg.length = 0;
 
+	if (in_msg.type == MSG_REQUEST_CONFIRMATION)
+		in_msg.length = 3;
+
 	if (in_msg_buffer.data[in_msg.length + 6] != crc(in_msg_buffer.data, in_msg.length + 6)) // Prüfsumme über Nachrichtennummer, Nachrichtentyp und Inhalt
 		return;
-
-	pending_cts_number = in_msg.number;
 
 	if (in_msg.type == MSG_PROXY_MESSAGE)
 	{
@@ -474,6 +459,7 @@ void process_message(void)
 		tmp_msg.length = i;
 
 		add_message_to_primary(&tmp_msg);
+		confirm_message_to_groundstation(in_msg.number);
 	}
 
 	if (in_msg.type == MSG_PING)
@@ -486,7 +472,26 @@ void process_message(void)
 		tmp_msg.contents.pong.sequence_number = in_msg.contents.ping.sequence_number;
 
 		build_message_to_groundstation(&tmp_msg);
+		confirm_message_to_groundstation(in_msg.number);
 	}
+
+	if (in_msg.type == MSG_REQUEST_CONFIRMATION)
+	{
+		in_msg.contents.request_confirmation.message_number = ((uint24_t)in_msg_buffer.data[6] << 16) | ((uint16_t)in_msg_buffer.data[7] << 8) | (in_msg_buffer.data[8]);
+
+		confirm_message_to_groundstation(in_msg.contents.request_confirmation.message_number);
+	}
+}
+
+void confirm_message_to_groundstation(uint24_t message_number)
+{
+	message tmp_msg;
+
+	tmp_msg.type = MSG_CONFIRMATION;
+	tmp_msg.length = 3;
+	tmp_msg.contents.confirmation.confirmed_message_number = message_number;
+
+	build_message_to_groundstation(&tmp_msg);
 }
 
 // Baut eine Nachricht im out_msg_buffer zusammen
@@ -518,15 +523,11 @@ void build_message_to_groundstation(message *out_msg)
 			out_msg_buffer.data[3] = (out_msg->contents.pong.sequence_number >> 8) & 0xFF;
 			out_msg_buffer.data[4] = (out_msg->contents.pong.sequence_number)      & 0xFF;
 		}
-		if (out_msg->type == MSG_CLEAR_TO_SEND)
+		if (out_msg->type == MSG_CONFIRMATION)
 		{
-			out_msg_buffer.data[3] = (out_msg->contents.clear_to_send.number >> 16) & 0xFF;
-			out_msg_buffer.data[4] = (out_msg->contents.clear_to_send.number >> 8)  & 0xFF;
-			out_msg_buffer.data[5] = (out_msg->contents.clear_to_send.number)       & 0xFF;
-
-			out_msg_buffer.data[6] = (out_msg->contents.clear_to_send.previous_number >> 16) & 0xFF;
-			out_msg_buffer.data[7] = (out_msg->contents.clear_to_send.previous_number >> 8)  & 0xFF;
-			out_msg_buffer.data[8] = (out_msg->contents.clear_to_send.previous_number)       & 0xFF;
+			out_msg_buffer.data[3] = (out_msg->contents.confirmation.confirmed_message_number >> 16) & 0xFF;
+			out_msg_buffer.data[4] = (out_msg->contents.confirmation.confirmed_message_number >> 8)  & 0xFF;
+			out_msg_buffer.data[5] = (out_msg->contents.confirmation.confirmed_message_number)       & 0xFF;
 		}
 
 		out_msg_buffer.data[out_msg->length + 3] = crc(out_msg_buffer.data, out_msg->length+3);
